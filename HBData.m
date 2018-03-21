@@ -4,7 +4,12 @@ p_hub_in_max = 2;
 p_hub_in_min = 0; 
 p_hub_out_max = 1.5; 
 p_hub_out_min = 0;
-p_gasin_max = 1.5; 
+if Option_MPTest_Gas
+    p_gasin_max = 1.0
+else
+    p_gasin_max = 1.5; 
+end
+
 % p_gasin_max = 0; 
 % p_gasin_max = 0.5; 
 p_gasin_min = 0;
@@ -91,7 +96,29 @@ h_disc_min = h_disc_min/SB;
 yita_tf = 1; % no transformer
 yita_chp_E = 0.35; % check
 yita_chp_H = 0.65; % check
-yita_ees = 0.98;
-yita_tes = 0.98;
+switch Option_Eff 
+    case 1
+        yita_ees = sqrt(0.98);
+        yita_tes = sqrt(0.98);
+    case 2
+        yita_ees = sqrt(0.80);
+        yita_tes = sqrt(0.98);
+    case 3
+        yita_ees = sqrt(0.60);
+        yita_tes = sqrt(0.98);
+    case 4
+        yita_ees = sqrt(0.98);
+        yita_tes = sqrt(0.80);
+    case 5
+        yita_ees = sqrt(0.98);
+        yita_tes = sqrt(0.60);
+    case 6
+        yita_ees = sqrt(0.80);
+        yita_tes = sqrt(0.80);
+    case 7
+        yita_ees = sqrt(0.60);
+        yita_tes = sqrt(0.60);
+end
+
 yita_hp = 3;
 

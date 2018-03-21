@@ -2,8 +2,7 @@
 % Function: Energy Hub Bidding in Integrated Energy System
 % Author: Ricky (Rui Li) at Tsinghua & Harvard university
 % E-mail: eeairicky@gmail.com eeairicky@seas.harvard.edu
-% Version: 8.1 2017/12/03
-% https://www.eia.gov/electricity/wholesale/
+% Version: 8.1 2017/12/03 2018/03/18
 %========================================================================
 clc; close all; clear all;
 format short;
@@ -15,19 +14,30 @@ U0 = 1.05;
 SB = 10; % base value MW
 
 %% ========== control option ============
-Draw_EH = 1; 
-Draw_P = 1; 
-Draw_D = 1; 
+Draw_EH = 0; 
+Draw_P = 0; 
+Draw_D = 0; 
 SysPDN = 33;
 SysDHN = 32;
-Option_Price = 4; % TOU 1, Peak-Vally 2, 3 Random, 4 LMP
-Option_Gas = 1; % cheap 1, expensive 2
-Season = 4; % 1,2,3,4
-BAU = 1;
-GenCost_Plus = 0;
-% GenCost_Plus = -1;
-GenCost_Factor = 0;
-switch Season
+BAU = 0;            % BenchMark 1, 0
+Option_Price = 4;   % TOU 1, Peak-Vally 2, Random 3, LMP 4
+Option_Gas = 1;     % Cheap 1, Expensive 2, Volatile 3
+Option_Eff = 1;     % 0.98(1), 0.90 (2), 0.80 (3), 0.70 (4), 0.60 (5),  0.50 (6)
+Option_Season = 4;  % 1,2,3,4
+Option_MPTest_RootNode = 0; % 1 Increase upper grid capacity 
+Option_MPTest_GTGB = 1;     % 1 Increase GTBG capacity  2
+Option_MPTest_Gas = 0;      % Limit gas input as 1
+Option_GenCost_Plus = 0;    % Increase Gencost 1.2
+Option_GenCost_Minus = 0;   % Decrease Gencost 0.8
+Option_Runtime = 0;         % Random test run time
+GenCost_Factor = 0;         % Price control parameter
+if Option_GenCost_Minus && Option_MPTest_GTGB
+    Option_GenCostCap = 1;  % Decrease Gencost & Increase GTGB capacity
+else
+    Option_GenCostCap = 0;  
+end
+
+switch Option_Season
     case 1  % Spring
         SeasonP = 1; SeasonD = 2;
     case 2  % Summer
@@ -38,7 +48,7 @@ switch Season
         SeasonP = 4; SeasonD = 3;
 end
 
-cp = 4.2; % KJ/(kg.K) 25¡æ
+cp = 4.2; % KJ/(kg.K) 25â„ƒ
 Ind_EH_PDN = 2;
 Ind_EH_DHN = 31;
 
@@ -55,20 +65,28 @@ switch Option_Price
     case 3
         Cgrid = 0.15*Cgrid3*1e3;
     case 4
-        load LMP_base.mat
+        load LMP_base.mat % https://www.eia.gov/electricity/wholesale/
         Cgrid = LMP_base;
     end
-Cgrid = Cgrid*SB; % $/(p.u)
-theta = Cgrid(1:NT); % $/(p.u)
+Cgrid = Cgrid*SB;               % $/(p.u)
+theta = Cgrid(1:NT);            % $/(p.u)
+
 if Option_Gas == 1
-    gamma_gas = 26*ones(1,NT); % $/(MW.h) [18,26]  4*$/GJ = *$/(Mw.h) USA
+    gamma_gas = 26*ones(1,NT);  % $/(MW.h) [18,26]  4*$/GJ = *$/(Mw.h) USA
+elseif Option_Gas == 2
+    gamma_gas = 40*ones(1,NT);  % China
 else
-    gamma_gas = 40*ones(1,NT); % China
+    gamma_gas = [20*ones(1,6) 30*ones(1,12), 20*ones(1,6)]; % Imaginary gas price
 end
 gamma_gas = gamma_gas*SB; % p.u. 
 
-Pgrid_max = 0.3*ones(1,NT); % p.u.
-Qgrid_max = 0.3*ones(1,NT); % p.u.
+if Option_MPTest_RootNode == 0 
+    Pgrid_max = 0.3*ones(1,NT); % p.u.
+    Qgrid_max = 0.3*ones(1,NT); % p.u.
+else
+    Pgrid_max = 0.8*ones(1,NT); % p.u.
+    Qgrid_max = 0.8*ones(1,NT); % p.u
+end
 
 %% ========== load data ============
 eval('HBData') 
@@ -120,8 +138,8 @@ p_hat_hub_out = sdpvar(1,NT,'full');
 %%% Find ind
 Ind_Vara_P_out = getvariables(p_hub_out); % link var
 Ind_Vara_P_in = getvariables(p_hub_in);
-Ind_Coef_Price_P_out = find(model_PDN.f == Para_Price_P_out);  % link coef
-Ind_Coef_Price_P_in = find(model_PDN.f == -Para_Price_P_in); % attention -Para_Price
+Ind_Coef_Price_P_out = find(model_PDN.f == Para_Price_P_out);   % link coef
+Ind_Coef_Price_P_in = find(model_PDN.f == -Para_Price_P_in);    % attention -Para_Price !!!!
 Ind_Cons_Quan_P_out = find(model_PDN.bineq == Para_Quan_P_out); % link cons
 Ind_Cons_Quan_P_in = find(model_PDN.bineq == Para_Quan_P_in);
 
@@ -259,35 +277,12 @@ ops.cplex.epagap = 5*1e-3;
 % ops.cplex.epgap = 1e-3;
 % ops.cplex.epagap = 1e-3;
 tic
-sol = optimize(Cons_Final,-Obj_UP,ops) % attention -Obj max
+sol = optimize(Cons_Final,-Obj_UP,ops) % attention -Obj max !!!
 toc
 
 if sol.problem == 0
     disp('successed!')
-    switch Season
-        case 1
-            save Result_Season1.mat 
-        case 2
-            save Result_Season2.mat
-        case 3
-            save Result_Season3.mat
-        case 4
-            if BAU == 1
-              save Result_Season4_BAU.mat
-            elseif Option_Gas == 2
-              save Result_Season4_Gas2.mat
-            elseif Option_Price == 1
-              save Result_Season4_BAU_TOU.mat 
-            elseif Option_Price == 2
-              save Result_Season4_BAU_PV.mat  
-            elseif Option_Price == 3
-              save Result_Season4_BAU_Random.mat
-            elseif GenCost_Plus == 1
-                save Result_GenCostPlus.mat
-            elseif GenCost_Plus == -1
-                 save Result_GenCostPlus.mat
-            end
-    end
+
         
     Profit = value(Obj_UP)
     
@@ -295,8 +290,8 @@ if sol.problem == 0
     disp('Revenue of Energy Hub')
     R_Reve_PDN_disc = value(sum(Reve_PDN_disc_t))
     R_Reve_PDN_char = value(sum(Reve_PDN_char_t))
-    R_Reve_PDN = R_Reve_PDN_disc - R_Reve_PDN_char;
-    R_Reve_DHN = value(sum(Reve_DHN_t));
+    R_Reve_PDN = R_Reve_PDN_disc - R_Reve_PDN_char
+    R_Reve_DHN = value(sum(Reve_DHN_t))
     R_Reve_Gas = value(sum(gamma_gas.*p_gasin))
     Profit = R_Reve_PDN + R_Reve_DHN - R_Reve_Gas
 
@@ -339,6 +334,55 @@ if sol.problem == 0
 % %         eval('DrawLMHP');
 %         eval('DrawLoss');
 %     end
+    eval('DataTransF')
+%     eval('DataTransF')
+    switch Option_Season
+        case 1
+            save Result_Season1.mat 
+        case 2
+            save Result_Season2.mat
+        case 3
+            save Result_Season3.mat
+        case 4
+            if BAU == 1
+              save Result_Season4_BAU.mat
+            elseif Option_Gas == 2
+              save Result_Season4_Gas2.mat
+            elseif Option_Gas == 3
+              save Result_Season4_Gas3.mat 
+            elseif Option_Price == 1
+              save Result_Season4_BAU_TOU.mat 
+            elseif Option_Price == 2
+              save Result_Season4_BAU_PV.mat  
+            elseif Option_Price == 3
+              save Result_Season4_BAU_Random.mat
+            elseif Option_MPTest_Gas == 1
+              save Result_MPTest_Gas.mat
+            elseif Option_Eff == 2  % 0.90
+              save Result_Season4_BAU_ESU80.mat
+            elseif Option_Eff == 3  % 0.80
+              save Result_Season4_BAU_ESU60.mat 
+            elseif Option_Eff == 4  % 0.70
+              save Result_Season4_BAU_TSU80.mat  
+            elseif Option_Eff == 5  % 0.60
+              save Result_Season4_BAU_TSU60.mat 
+            elseif Option_Eff == 6  % 0.50
+              save Result_Season4_BAU_ETSU80.mat  
+            elseif Option_Eff == 7  % 0.50
+              save Result_Season4_BAU_ETSU60.mat 
+            %% market power test  
+            elseif Option_MPTest_RootNode == 1 
+               save Result_MPTest_RootNode.mat
+            elseif Option_MPTest_GTGB == 1 
+               save Result_MPTest_GBGT.mat   
+            elseif Option_GenCost_Plus == 1
+               save Result_MPTest_GenCostPlus.mat
+            elseif Option_GenCost_Minus == 1
+               save Result_MPTest_GenCostMinus.mat
+            elseif Option_GenCostCap == 1;
+               save Result_MPTest_GenCostCap.mat
+            end
+    end
 else
     display('Hmm, the startup of SmarterRLC would fail!');
     sol.info

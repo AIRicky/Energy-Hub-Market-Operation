@@ -3,12 +3,9 @@ Related to the paper: Rui Li, Wei Wei, Shengwei Mei, Qinran Hu, Qiuwei Wu. [Part
 
 More details are avaiable here https://github.com/AIRicky/Energy-Hub-Market-Operation/wiki
 
-**MainPABV11.m** is the main function.
+**MainPABV11.m** is the main function, and the external input data are listed in:
 
-The external input data are listed in:
 -Heat load in HeatLoaddata.xlsx
--LMP price data in LMP_base.mat
-
-The internal input data are 
+-LMP price data in LMP_base.mat 
 
 *I am re-organizing the code, and shall release a new version with better interfaces.*

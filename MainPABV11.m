@@ -24,6 +24,20 @@ NT = 24; % [1,24]
 U0 = 1.05;
 SB = 10; % base value MW
 
+%% === file path control ===
+base_folder = pwd;
+data_subfolder = fullfile(base_folder, 'Data');
+cons_subfolder = fullfile(base_folder, 'Cons');
+vars_subfolder = fullfile(base_folder, 'Vars');
+varcon_subfolder = fullfile(base_folder, 'VarCon');
+func_subfolder = fullfile(base_folder, 'Func');
+
+addpath(data_subfolder);
+addpath(cons_subfolder);
+addpath(vars_subfolder);
+addpath(varcon_subfolder);
+addpath(func_subfolder);
+
 %% ========== control option ============
 Draw_EH = 0; 
 Draw_P = 0; 
@@ -59,7 +73,7 @@ switch Option_Season
         SeasonP = 4; SeasonD = 3;
 end
 
-cp = 4.2; % KJ/(kg.K) 25â„ƒ
+cp = 4.2; % KJ/(kg.K) 25â„?
 Ind_EH_PDN = 2;
 Ind_EH_DHN = 31;
 

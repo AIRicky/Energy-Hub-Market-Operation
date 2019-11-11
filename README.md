@@ -1,12 +1,9 @@
-# EH-PAB
-Related to the paper: Rui Li, Wei Wei, Shengwei Mei, Qinran Hu, Qiuwei Wu. [Participation of an Energy Hub in Electricity and Heat Distribution Markets: An MPEC Approach](https://ieeexplore.ieee.org/document/8354834/). IEEE Transactions on Smart Grid.
+# Market Participation of the Energy Hub with Pay-as-Bid Mechanisms
 
-**MainPABV11.m** is the main function, and the external input data are listed in:
+This repository is related to our research on the market participation of the energy hub in integrated energy markets, and more details can be found in the paper, Rui Li, Wei Wei, Shengwei Mei, Qinran Hu, Qiuwei Wu. [Participation of an Energy Hub in Electricity and Heat Distribution Markets: An MPEC Approach](https://ieeexplore.ieee.org/document/8354834/). IEEE Transactions on Smart Grid, vol. 10, no. 4, pp. 3641-3653, July 2019. doi: 10.1109/TSG.2018.2833279
 
-*Heat load in HeatLoaddata.xlsx
 
-*LMP price data in LMP_base.mat 
+**MainPAB.m** is the main function, and associated sources such as *data*, *constraints*, *variables*, and *functions* are refactored in the corresponding folders.
+
 
 More details are avaiable here https://github.com/AIRicky/Energy-Hub-Market-Operation/wiki
-
-*I am re-organizing the code, and shall release a new version with better interfaces.*
